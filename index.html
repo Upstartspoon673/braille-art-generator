@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>盲文點陣藝術產生器 | Braille Pixel Art Generator</title>
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@400;700&family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
@@ -28,21 +27,9 @@
       line-height: 1.5;
       padding: 24px 16px;
     }
-    .container {
-      max-width: 920px;
-      margin: 0 auto;
-    }
-    h1 {
-      font-size: 1.6rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-      letter-spacing: 0.02em;
-    }
-    .subtitle {
-      color: var(--muted);
-      font-size: 0.95rem;
-      margin-bottom: 28px;
-    }
+    .container { max-width: 920px; margin: 0 auto; }
+    h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 28px; }
     .card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -69,19 +56,10 @@
       font-family: inherit;
       resize: vertical;
       outline: none;
-      transition: border-color 0.15s;
     }
     textarea:focus { border-color: var(--accent); }
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin-top: 18px;
-    }
-    .field {
-      flex: 1;
-      min-width: 140px;
-    }
+    .row { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 18px; }
+    .field { flex: 1; min-width: 140px; }
     select, input[type="range"] {
       width: 100%;
       background: #121218;
@@ -92,20 +70,13 @@
       font-size: 0.95rem;
       outline: none;
     }
-    select:focus { border-color: var(--accent); }
     .range-value {
       display: inline-block;
       min-width: 28px;
       text-align: right;
       color: var(--accent);
-      font-variant-numeric: tabular-nums;
     }
-    .btn-row {
-      display: flex;
-      gap: 12px;
-      margin-top: 20px;
-      flex-wrap: wrap;
-    }
+    .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
     button {
       appearance: none;
       border: none;
@@ -114,31 +85,14 @@
       font-size: 0.95rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
       font-family: inherit;
     }
-    button:active { transform: scale(0.98); }
-    .btn-primary {
-      background: var(--accent);
-      color: white;
-    }
+    .btn-primary { background: var(--accent); color: white; }
     .btn-primary:hover { background: var(--accent-hover); }
     .btn-secondary {
       background: #2a2a36;
       color: var(--text);
       border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { background: #343442; }
-    .output-card {
-      position: relative;
-    }
-    .output-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-      gap: 8px;
     }
     #output {
       background: #0a0a0e;
@@ -154,11 +108,7 @@
       color: #d4d4e0;
       user-select: all;
     }
-    .hint {
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-top: 10px;
-    }
+    .hint { font-size: 0.8rem; color: var(--muted); margin-top: 10px; }
     .toast {
       position: fixed;
       bottom: 28px;
@@ -175,10 +125,7 @@
       transition: opacity 0.25s, transform 0.25s;
       z-index: 100;
     }
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
@@ -225,8 +172,8 @@
           <input type="range" id="thickness" min="0" max="5" value="2" step="1">
         </div>
         <div class="field">
-          <label for="spacing">字距間隔 <span class="range-value" id="spacingVal">1</span></label>
-          <input type="range" id="spacing" min="1" max="4" value="1" step="1">
+          <label for="spacing">字距間隔 <span class="range-value" id="spacingVal">0</span></label>
+          <input type="range" id="spacing" min="0" max="4" value="0" step="1">
         </div>
         <div class="field">
           <label for="cellW">每字寬度（點格） <span class="range-value" id="cellWVal">14</span></label>
@@ -245,12 +192,10 @@
       </div>
     </div>
 
-    <div class="card output-card">
-      <div class="output-header">
-        <label style="margin:0">輸出結果（可全選複製）</label>
-      </div>
+    <div class="card">
+      <label style="margin:0 0 12px 0">輸出結果（可全選複製）</label>
       <div id="output">點擊「產生藝術字」後會顯示在這裡</div>
-      <p class="hint">提示：建議用等寬字體瀏覽；若中文字顯示異常，請確認系統已安裝繁體中文字型，或改用上方「字體」選單中的網頁字型。</p>
+      <p class="hint">提示：建議用等寬字體瀏覽。間隔已預設為 0（幾乎無上下空白），外圍空白也已壓到最小。</p>
     </div>
   </div>
 
@@ -282,6 +227,17 @@
       setTimeout(() => toast.classList.remove('show'), 1800);
     }
 
+    // 判斷一行是否「幾乎全空」或「幾乎全滿」
+    function isBlankLine(line, inverted) {
+      if (!line) return true;
+      if (inverted) {
+        // 鏤空：整行幾乎都是 ⣿ 就當空白邊
+        return [...line].every(c => c === '⣿' || c === '⠀');
+      } else {
+        return [...line].every(c => c === '⠀');
+      }
+    }
+
     function charToBraille(char, opts) {
       const {
         fontSize = 160,
@@ -298,10 +254,10 @@
       ctx.font = `bold ${fontSize}px ${fontFamily}`;
       const metrics = ctx.measureText(char);
       const textW = metrics.width;
-      const textH = fontSize * 1.15;
+      const textH = fontSize * 1.1;
 
-      // 邊緣空白大幅縮小（只留一點點）
-      const pad = fontSize * 0.06;
+      // ★ 外圍空白壓到最小
+      const pad = fontSize * 0.02;
       const canvasSize = Math.ceil(Math.max(textW, textH) + pad * 2);
       canvas.width = canvasSize;
       canvas.height = canvasSize;
@@ -353,11 +309,7 @@
       const binary = new Uint8Array(pixelW * pixelH);
       for (let i = 0; i < pixelW * pixelH; i++) {
         const lum = data[i * 4];
-        if (inverted) {
-          binary[i] = lum >= 140 ? 1 : 0;
-        } else {
-          binary[i] = lum < 140 ? 1 : 0;
-        }
+        binary[i] = inverted ? (lum >= 140 ? 1 : 0) : (lum < 140 ? 1 : 0);
       }
 
       const lines = [];
@@ -378,6 +330,11 @@
         }
         lines.push(line);
       }
+
+      // ★ 去掉上下多餘的空白行（消掉外圍空白）
+      while (lines.length && isBlankLine(lines[0], inverted)) lines.shift();
+      while (lines.length && isBlankLine(lines[lines.length - 1], inverted)) lines.pop();
+
       return lines;
     }
 
@@ -403,8 +360,8 @@
         fontFamily: fontFamilySel.value
       };
 
-      // 字距最低 1 格（預設也是 1）
-      const spacing = Math.max(0, parseInt(spacingInput.value, 10));
+      // 預設間隔 0（幾乎無上下空白）
+      const spacing = parseInt(spacingInput.value, 10);
       const dir = direction.value;
       let result = [];
 
@@ -415,7 +372,8 @@
         chars.forEach((ch, idx) => {
           const lines = charToBraille(ch, opts);
           result.push(...lines);
-          if (idx < chars.length - 1) {
+          // 只有 spacing > 0 才加間隔，且只加指定行數
+          if (idx < chars.length - 1 && spacing > 0) {
             for (let s = 0; s < spacing; s++) {
               result.push(sepLine);
             }
@@ -425,14 +383,14 @@
         const allCharLines = chars.map(ch => charToBraille(ch, opts));
         const maxLines = Math.max(...allCharLines.map(l => l.length));
         const gapUnit = opts.inverted ? '⣿' : '⠀';
-        const gap = gapUnit.repeat(Math.max(1, spacing));
+        const gap = gapUnit.repeat(Math.max(0, spacing));
 
         for (let row = 0; row < maxLines; row++) {
           let line = '';
           allCharLines.forEach((charLines, idx) => {
             const segment = charLines[row] || (opts.inverted ? '⣿'.repeat(opts.cellW) : '⠀'.repeat(opts.cellW));
             line += segment;
-            if (idx < allCharLines.length - 1) line += gap;
+            if (idx < allCharLines.length - 1 && spacing > 0) line += gap;
           });
           result.push(line);
         }
@@ -448,17 +406,16 @@
         showToast('沒有可複製的內容');
         return;
       }
-      navigator.clipboard.writeText(text).then(() => {
-        showToast('已複製到剪貼簿');
-      }).catch(() => {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        showToast('已複製到剪貼簿');
-      });
+      navigator.clipboard.writeText(text).then(() => showToast('已複製到剪貼簿'))
+        .catch(() => {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          showToast('已複製到剪貼簿');
+        });
     });
     $('clearBtn').addEventListener('click', () => {
       inputText.value = '';
