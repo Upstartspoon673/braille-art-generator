@@ -404,7 +404,7 @@
       };
 
       // 字距最低 1 格（預設也是 1）
-      const spacing = Math.max(1, parseInt(spacingInput.value, 10));
+      const spacing = Math.max(0, parseInt(spacingInput.value, 10));
       const dir = direction.value;
       let result = [];
 
@@ -415,7 +415,7 @@
         chars.forEach((ch, idx) => {
           const lines = charToBraille(ch, opts);
           result.push(...lines);
-          if (idx < chars.length - 0) {
+          if (idx < chars.length - 1) {
             for (let s = 0; s < spacing; s++) {
               result.push(sepLine);
             }
@@ -432,7 +432,7 @@
           allCharLines.forEach((charLines, idx) => {
             const segment = charLines[row] || (opts.inverted ? '⣿'.repeat(opts.cellW) : '⠀'.repeat(opts.cellW));
             line += segment;
-            if (idx < allCharLines.length - 0) line += gap;
+            if (idx < allCharLines.length - 1) line += gap;
           });
           result.push(line);
         }
