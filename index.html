@@ -190,6 +190,64 @@
         <button class="btn-secondary" id="copyBtn">複製結果</button>
         <button class="btn-secondary" id="clearBtn">清除</button>
       </div>
+        <!-- 生成技巧 -->
+    <div class="card">
+      <h2 style="font-size:1.15rem; margin-bottom:14px; font-weight:700;">生成技巧</h2>
+      
+      <p style="margin-bottom:12px; line-height:1.6;">
+        <strong>長寬比說明：</strong><br>
+        因為一個盲文格子是 <strong>2 點寬 × 4 點高</strong>，所以要讓字看起來接近<strong>正方形</strong>，請使用：
+      </p>
+      <p style="background:#121218; padding:12px 16px; border-radius:8px; margin-bottom:16px; font-family:monospace;">
+        每字寬度 (cellW) ≈ 每字高度 (cellH) × 2
+      </p>
+
+      <p style="margin-bottom:10px;"><strong>建議搭配：</strong></p>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+          <thead>
+            <tr style="background:#121218;">
+              <th style="padding:10px 12px; text-align:left; border-bottom:1px solid #2e2e3a;">每字高度 (cellH)</th>
+              <th style="padding:10px 12px; text-align:left; border-bottom:1px solid #2e2e3a;">建議每字寬度 (cellW)</th>
+              <th style="padding:10px 12px; text-align:left; border-bottom:1px solid #2e2e3a;">視覺效果</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:10px 12px; border-bottom:1px solid #2e2e3a;">6</td>
+              <td style="padding:10px 12px; border-bottom:1px solid #2e2e3a;">12</td>
+              <td style="padding:10px 12px; border-bottom:1px solid #2e2e3a;">較小、緊湊</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 12px; border-bottom:1px solid #2e2e3a;">7</td>
+              <td style="padding:10px 12px; border-bottom:1px solid #2e2e3a;">14</td>
+              <td style="padding:10px 12px; border-bottom:1px solid #2e2e3a;">平衡（推薦）</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 12px; border-bottom:1px solid #2e2e3a;">8</td>
+              <td style="padding:10px 12px; border-bottom:1px solid #2e2e3a;">16</td>
+              <td style="padding:10px 12px; border-bottom:1px solid #2e2e3a;">較大、清楚</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 12px; border-bottom:1px solid #2e2e3a;">9</td>
+              <td style="padding:10px 12px; border-bottom:1px solid #2e2e3a;">18</td>
+              <td style="padding:10px 12px; border-bottom:1px solid #2e2e3a;">更大</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 12px;">10</td>
+              <td style="padding:10px 12px;">20</td>
+              <td style="padding:10px 12px;">很細緻</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="margin-top:16px; font-size:0.9rem; color:var(--muted); line-height:1.6;">
+        其他小技巧：<br>
+        • 字距間隔設 <strong>0</strong> 可讓字幾乎貼在一起<br>
+        • 鏤空風格適合深色背景，實心風格適合淺色背景<br>
+        • 筆畫粗細調高可讓字更清楚，但細節會變少
+      </p>
     </div>
 
     <div class="card">
