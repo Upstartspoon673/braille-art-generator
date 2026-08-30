@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>盲文點陣藝術產生器 | Braille Pixel Art Generator</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@400;700&family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f0f13;
+      --card: #1a1a22;
+      --border: #2e2e3a;
+      --text: #e8e8ed;
+      --muted: #9898a6;
+      --accent: #7c5cfc;
+      --accent-hover: #6a4ae0;
+      --success: #34d399;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 28px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    textarea {
+      width: 100%;
+      min-height: 90px;
+      background: #121218;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 14px;
+      font-size: 1.15rem;
+      font-family: inherit;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { border-color: var(--accent); }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 18px;
+    }
+    .field {
+      flex: 1;
+      min-width: 140px;
+    }
+    select, input[type="range"] {
+      width: 100%;
+      background: #121218;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    select:focus { border-color: var(--accent); }
+    .range-value {
+      display: inline-block;
+      min-width: 28px;
+      text-align: right;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    button {
+      appearance: none;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 22px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      font-family: inherit;
+    }
+    button:active { transform: scale(0.98); }
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary {
+      background: #2a2a36;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: #343442; }
+    .output-card {
+      position: relative;
+    }
+    .output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    #output {
+      background: #0a0a0e;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      font-family: "Cascadia Code", "Fira Code", "Consolas", "Courier New", monospace;
+      font-size: 15px;
+      line-height: 1.15;
+      white-space: pre;
+      overflow-x: auto;
+      min-height: 120px;
+      color: #d4d4e0;
+      user-select: all;
+    }
+    .hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--success);
+      color: #064e3b;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 100;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>盲文點陣藝術產生器</h1>
+    <p class="subtitle">輸入繁體中文或英文，產生類似點字藝術字體（可選直式／橫式、實心／鏤空）</p>
+
+    <div class="card">
+      <label for="inputText">輸入文字</label>
+      <textarea id="inputText" placeholder="例如：你是男娘　或　Hello">你是男娘</textarea>
+
+      <div class="row">
+        <div class="field">
+          <label for="direction">排列方向</label>
+          <select id="direction">
+            <option value="vertical">直式（垂直排列）</option>
+            <option value="horizontal">橫式（水平排列）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="style">風格</label>
+          <select id="style">
+            <option value="inverted">鏤空（背景填滿、字是空的）</option>
+            <option value="solid">實心（字是填滿的）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fontFamily">字體</label>
+          <select id="fontFamily">
+            <option value='"Noto Sans TC", "Microsoft JhengHei", sans-serif'>Noto Sans TC（無襯線）</option>
+            <option value='"Noto Serif TC", "PMingLiU", serif'>Noto Serif TC（襯線）</option>
+            <option value='"ZCOOL KuaiLe", cursive'>站酷快樂體</option>
+            <option value='"Ma Shan Zheng", cursive'>馬善政毛筆</option>
+            <option value='Roboto, "Noto Sans TC", sans-serif'>Roboto + 中文</option>
+            <option value='"Microsoft JhengHei", "PingFang TC", sans-serif'>系統預設</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="size">字體細緻度 <span class="range-value" id="sizeVal">160</span></label>
+          <input type="range" id="size" min="80" max="280" value="160" step="10">
+        </div>
+        <div class="field">
+          <label for="thickness">筆畫粗細 <span class="range-value" id="thickVal">2</span></label>
+          <input type="range" id="thickness" min="0" max="5" value="2" step="1">
+        </div>
+        <div class="field">
+          <label for="spacing">字距間隔 <span class="range-value" id="spacingVal">1</span></label>
+          <input type="range" id="spacing" min="1" max="4" value="1" step="1">
+        </div>
+        <div class="field">
+          <label for="cellW">每字寬度（點格） <span class="range-value" id="cellWVal">14</span></label>
+          <input type="range" id="cellW" min="8" max="24" value="14" step="1">
+        </div>
+        <div class="field">
+          <label for="cellH">每字高度（點格） <span class="range-value" id="cellHVal">8</span></label>
+          <input type="range" id="cellH" min="5" max="16" value="8" step="1">
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" id="generateBtn">產生藝術字</button>
+        <button class="btn-secondary" id="copyBtn">複製結果</button>
+        <button class="btn-secondary" id="clearBtn">清除</button>
+      </div>
+    </div>
+
+    <div class="card output-card">
+      <div class="output-header">
+        <label style="margin:0">輸出結果（可全選複製）</label>
+      </div>
+      <div id="output">點擊「產生藝術字」後會顯示在這裡</div>
+      <p class="hint">提示：建議用等寬字體瀏覽；若中文字顯示異常，請確認系統已安裝繁體中文字型，或改用上方「字體」選單中的網頁字型。</p>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">已複製到剪貼簿</div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const inputText = $('inputText');
+    const direction = $('direction');
+    const styleSel = $('style');
+    const fontFamilySel = $('fontFamily');
+    const sizeInput = $('size');
+    const thickInput = $('thickness');
+    const spacingInput = $('spacing');
+    const cellWInput = $('cellW');
+    const cellHInput = $('cellH');
+    const output = $('output');
+    const toast = $('toast');
+
+    sizeInput.oninput = () => $('sizeVal').textContent = sizeInput.value;
+    thickInput.oninput = () => $('thickVal').textContent = thickInput.value;
+    spacingInput.oninput = () => $('spacingVal').textContent = spacingInput.value;
+    cellWInput.oninput = () => $('cellWVal').textContent = cellWInput.value;
+    cellHInput.oninput = () => $('cellHVal').textContent = cellHInput.value;
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    function charToBraille(char, opts) {
+      const {
+        fontSize = 160,
+        cellW = 14,
+        cellH = 8,
+        thickness = 2,
+        inverted = true,
+        fontFamily = '"Noto Sans TC", "Microsoft JhengHei", sans-serif'
+      } = opts;
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      ctx.font = `bold ${fontSize}px ${fontFamily}`;
+      const metrics = ctx.measureText(char);
+      const textW = metrics.width;
+      const textH = fontSize * 1.15;
+
+      // 邊緣空白大幅縮小（只留一點點）
+      const pad = fontSize * 0.06;
+      const canvasSize = Math.ceil(Math.max(textW, textH) + pad * 2);
+      canvas.width = canvasSize;
+      canvas.height = canvasSize;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+      ctx.fillStyle = '#000000';
+      ctx.font = `bold ${fontSize}px ${fontFamily}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(char, canvasSize / 2, canvasSize / 2);
+
+      if (thickness > 0) {
+        const imgData = ctx.getImageData(0, 0, canvasSize, canvasSize);
+        for (let t = 0; t < thickness; t++) {
+          const copy = new Uint8ClampedArray(imgData.data);
+          const w = canvasSize, h = canvasSize;
+          for (let y = 1; y < h - 1; y++) {
+            for (let x = 1; x < w - 1; x++) {
+              const i = (y * w + x) * 4;
+              let black = false;
+              for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                  const ni = ((y + dy) * w + (x + dx)) * 4;
+                  if (copy[ni] < 128) { black = true; break; }
+                }
+                if (black) break;
+              }
+              if (black) {
+                imgData.data[i] = imgData.data[i+1] = imgData.data[i+2] = 0;
+              }
+            }
+          }
+        }
+        ctx.putImageData(imgData, 0, 0);
+      }
+
+      const pixelW = cellW * 2;
+      const pixelH = cellH * 4;
+      const small = document.createElement('canvas');
+      small.width = pixelW;
+      small.height = pixelH;
+      const sctx = small.getContext('2d');
+      sctx.imageSmoothingEnabled = true;
+      sctx.drawImage(canvas, 0, 0, pixelW, pixelH);
+
+      const data = sctx.getImageData(0, 0, pixelW, pixelH).data;
+      const binary = new Uint8Array(pixelW * pixelH);
+      for (let i = 0; i < pixelW * pixelH; i++) {
+        const lum = data[i * 4];
+        if (inverted) {
+          binary[i] = lum >= 140 ? 1 : 0;
+        } else {
+          binary[i] = lum < 140 ? 1 : 0;
+        }
+      }
+
+      const lines = [];
+      for (let y = 0; y < pixelH; y += 4) {
+        let line = '';
+        for (let x = 0; x < pixelW; x += 2) {
+          let dots = 0;
+          const get = (py, px) => (py < pixelH && px < pixelW) ? binary[py * pixelW + px] : 0;
+          if (get(y,     x    )) dots |= 0x01;
+          if (get(y + 1, x    )) dots |= 0x02;
+          if (get(y + 2, x    )) dots |= 0x04;
+          if (get(y + 3, x    )) dots |= 0x40;
+          if (get(y,     x + 1)) dots |= 0x08;
+          if (get(y + 1, x + 1)) dots |= 0x10;
+          if (get(y + 2, x + 1)) dots |= 0x20;
+          if (get(y + 3, x + 1)) dots |= 0x80;
+          line += String.fromCodePoint(0x2800 + dots);
+        }
+        lines.push(line);
+      }
+      return lines;
+    }
+
+    function generate() {
+      const text = inputText.value.trim();
+      if (!text) {
+        output.textContent = '請先輸入文字';
+        return;
+      }
+
+      const chars = [...text].filter(c => c.trim() !== '');
+      if (chars.length === 0) {
+        output.textContent = '請輸入有效文字';
+        return;
+      }
+
+      const opts = {
+        fontSize: parseInt(sizeInput.value, 10),
+        cellW: parseInt(cellWInput.value, 10),
+        cellH: parseInt(cellHInput.value, 10),
+        thickness: parseInt(thickInput.value, 10),
+        inverted: styleSel.value === 'inverted',
+        fontFamily: fontFamilySel.value
+      };
+
+      // 字距最低 1 格（預設也是 1）
+      const spacing = Math.max(1, parseInt(spacingInput.value, 10));
+      const dir = direction.value;
+      let result = [];
+
+      if (dir === 'vertical') {
+        const fillChar = opts.inverted ? '⣿' : '⠀';
+        const sepLine = fillChar.repeat(opts.cellW);
+
+        chars.forEach((ch, idx) => {
+          const lines = charToBraille(ch, opts);
+          result.push(...lines);
+          if (idx < chars.length - 1) {
+            for (let s = 0; s < spacing; s++) {
+              result.push(sepLine);
+            }
+          }
+        });
+      } else {
+        const allCharLines = chars.map(ch => charToBraille(ch, opts));
+        const maxLines = Math.max(...allCharLines.map(l => l.length));
+        const gapUnit = opts.inverted ? '⣿' : '⠀';
+        const gap = gapUnit.repeat(Math.max(1, spacing));
+
+        for (let row = 0; row < maxLines; row++) {
+          let line = '';
+          allCharLines.forEach((charLines, idx) => {
+            const segment = charLines[row] || (opts.inverted ? '⣿'.repeat(opts.cellW) : '⠀'.repeat(opts.cellW));
+            line += segment;
+            if (idx < allCharLines.length - 1) line += gap;
+          });
+          result.push(line);
+        }
+      }
+
+      output.textContent = result.join('\n');
+    }
+
+    $('generateBtn').addEventListener('click', generate);
+    $('copyBtn').addEventListener('click', () => {
+      const text = output.textContent;
+      if (!text || text.startsWith('點擊') || text.startsWith('請')) {
+        showToast('沒有可複製的內容');
+        return;
+      }
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('已複製到剪貼簿');
+      }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('已複製到剪貼簿');
+      });
+    });
+    $('clearBtn').addEventListener('click', () => {
+      inputText.value = '';
+      output.textContent = '點擊「產生藝術字」後會顯示在這裡';
+    });
+
+    generate();
+  </script>
+</body>
+</html>
