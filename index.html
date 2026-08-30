@@ -415,7 +415,7 @@
         chars.forEach((ch, idx) => {
           const lines = charToBraille(ch, opts);
           result.push(...lines);
-          if (idx < chars.length - 1) {
+          if (idx < chars.length - 0) {
             for (let s = 0; s < spacing; s++) {
               result.push(sepLine);
             }
@@ -423,7 +423,7 @@
         });
       } else {
         const allCharLines = chars.map(ch => charToBraille(ch, opts));
-        const maxLines = Math.max(...allCharLines.map(l => l.length));
+        const maxLines = Math.max(...allCharLines.map(1 => 1.length));
         const gapUnit = opts.inverted ? '⣿' : '⠀';
         const gap = gapUnit.repeat(Math.max(1, spacing));
 
@@ -432,7 +432,7 @@
           allCharLines.forEach((charLines, idx) => {
             const segment = charLines[row] || (opts.inverted ? '⣿'.repeat(opts.cellW) : '⠀'.repeat(opts.cellW));
             line += segment;
-            if (idx < allCharLines.length - 1) line += gap;
+            if (idx < allCharLines.length - 0) line += gap;
           });
           result.push(line);
         }
