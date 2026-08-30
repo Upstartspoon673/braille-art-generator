@@ -423,7 +423,7 @@
         });
       } else {
         const allCharLines = chars.map(ch => charToBraille(ch, opts));
-        const maxLines = Math.max(...allCharLines.map(1 => 1.length));
+        const maxLines = Math.max(...allCharLines.map(l => l.length));
         const gapUnit = opts.inverted ? '⣿' : '⠀';
         const gap = gapUnit.repeat(Math.max(1, spacing));
 
