@@ -408,4 +408,298 @@
 
     function copyOutput() {
       const text = output.textContent;
-      
+      if (!text || text.startsWith('點擊') || text.startsWith('請') || text.startsWith('還沒')) {
+        showToast('沒有可複製的內容');
+        return;
+      }
+      navigator.clipboard.writeText(text).then(() => showToast('已複製到剪貼簿'))
+        .catch(() => {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          showToast('已複製到剪貼簿');
+        });
+    }
+
+    function isBlankLine(line, inverted) {
+      if (!line) return true;
+      if (inverted) return [...line].every(c => c === '⣿' || c === '⠀');
+      return [...line].every(c => c === '⠀');
+    }
+
+    function charToBraille(char, opts) {
+      const {
+        fontSize = 160,
+        cellW = 14,
+        cellH = 8,
+        thickness = 2,
+        inverted = true,
+        fontFamily = '"Noto Sans TC", "Microsoft JhengHei", sans-serif'
+      } = opts;
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.font = `bold ${fontSize}px ${fontFamily}`;
+      const metrics = ctx.measureText(char);
+      const textW = metrics.width;
+      const textH = fontSize * 1.1;
+      const pad = fontSize * 0.02;
+      const canvasSize = Math.ceil(Math.max(textW, textH) + pad * 2);
+      canvas.width = canvasSize;
+      canvas.height = canvasSize;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvasSize, canvasSize);
+      ctx.fillStyle = '#000000';
+      ctx.font = `bold ${fontSize}px ${fontFamily}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(char, canvasSize / 2, canvasSize / 2);
+
+      if (thickness > 0) {
+        const imgData = ctx.getImageData(0, 0, canvasSize, canvasSize);
+        for (let t = 0; t < thickness; t++) {
+          const copy = new Uint8ClampedArray(imgData.data);
+          const w = canvasSize, h = canvasSize;
+          for (let y = 1; y < h - 1; y++) {
+            for (let x = 1; x < w - 1; x++) {
+              const i = (y * w + x) * 4;
+              let black = false;
+              for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                  const ni = ((y + dy) * w + (x + dx)) * 4;
+                  if (copy[ni] < 128) { black = true; break; }
+                }
+                if (black) break;
+              }
+              if (black) {
+                imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = 0;
+              }
+            }
+          }
+        }
+        ctx.putImageData(imgData, 0, 0);
+      }
+
+      const pixelW = cellW * 2;
+      const pixelH = cellH * 4;
+      const small = document.createElement('canvas');
+      small.width = pixelW;
+      small.height = pixelH;
+      const sctx = small.getContext('2d');
+      sctx.imageSmoothingEnabled = true;
+      sctx.drawImage(canvas, 0, 0, pixelW, pixelH);
+
+      const data = sctx.getImageData(0, 0, pixelW, pixelH).data;
+      const binary = new Uint8Array(pixelW * pixelH);
+      for (let i = 0; i < pixelW * pixelH; i++) {
+        const lum = data[i * 4];
+        binary[i] = inverted ? (lum >= 140 ? 1 : 0) : (lum < 140 ? 1 : 0);
+      }
+
+      const lines = [];
+      for (let y = 0; y < pixelH; y += 4) {
+        let line = '';
+        for (let x = 0; x < pixelW; x += 2) {
+          let dots = 0;
+          const get = (py, px) => (py < pixelH && px < pixelW) ? binary[py * pixelW + px] : 0;
+          if (get(y,     x    )) dots |= 0x01;
+          if (get(y + 1, x    )) dots |= 0x02;
+          if (get(y + 2, x    )) dots |= 0x04;
+          if (get(y + 3, x    )) dots |= 0x40;
+          if (get(y,     x + 1)) dots |= 0x08;
+          if (get(y + 1, x + 1)) dots |= 0x10;
+          if (get(y + 2, x + 1)) dots |= 0x20;
+          if (get(y + 3, x + 1)) dots |= 0x80;
+          line += String.fromCodePoint(0x2800 + dots);
+        }
+        lines.push(line);
+      }
+
+      while (lines.length && isBlankLine(lines[0], inverted)) lines.shift();
+      while (lines.length && isBlankLine(lines[lines.length - 1], inverted)) lines.pop();
+      return lines;
+    }
+
+    function generate() {
+      const text = inputText.value.trim();
+      if (!text) {
+        output.textContent = '請先輸入文字';
+        return;
+      }
+      const chars = [...text].filter(c => c.trim() !== '');
+      if (chars.length === 0) {
+        output.textContent = '請輸入有效文字';
+        return;
+      }
+
+      const opts = {
+        fontSize: parseInt(sizeInput.value, 10),
+        cellW: parseInt(cellWInput.value, 10),
+        cellH: parseInt(cellHInput.value, 10),
+        thickness: parseInt(thickInput.value, 10),
+        inverted: styleSel.value === 'inverted',
+        fontFamily: fontFamilySel.value
+      };
+
+      const spacing = parseInt(spacingInput.value, 10);
+      const dir = direction.value;
+      let result = [];
+
+      if (dir === 'vertical') {
+        const fillChar = opts.inverted ? '⣿' : '⠀';
+        const sepLine = fillChar.repeat(opts.cellW);
+        chars.forEach((ch, idx) => {
+          result.push(...charToBraille(ch, opts));
+          if (idx < chars.length - 1 && spacing > 0) {
+            for (let s = 0; s < spacing; s++) result.push(sepLine);
+          }
+        });
+      } else {
+        const allCharLines = chars.map(ch => charToBraille(ch, opts));
+        const maxLines = Math.max(...allCharLines.map(l => l.length));
+        const gapUnit = opts.inverted ? '⣿' : '⠀';
+        const gap = gapUnit.repeat(Math.max(0, spacing));
+        for (let row = 0; row < maxLines; row++) {
+          let line = '';
+          allCharLines.forEach((charLines, idx) => {
+            line += charLines[row] || (opts.inverted ? '⣿'.repeat(opts.cellW) : '⠀'.repeat(opts.cellW));
+            if (idx < allCharLines.length - 1 && spacing > 0) line += gap;
+          });
+          result.push(line);
+        }
+      }
+      output.textContent = result.join('\n');
+    }
+
+    const BAYER_4 = [
+      [ 0,  8,  2, 10],
+      [12,  4, 14,  6],
+      [ 3, 11,  1,  9],
+      [15,  7, 13,  5]
+    ];
+
+    function imageToBraille(img, opts) {
+      const {
+        cellsW = 60,
+        threshold = 128,
+        invert = false,
+        dither = 'bayer'
+      } = opts;
+
+      const pixelW = cellsW * 2;
+      const aspect = img.naturalHeight / img.naturalWidth;
+      let pixelH = Math.max(4, Math.round(pixelW * aspect));
+      pixelH = Math.ceil(pixelH / 4) * 4;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = pixelW;
+      canvas.height = pixelH;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, pixelW, pixelH);
+      ctx.drawImage(img, 0, 0, pixelW, pixelH);
+
+      const data = ctx.getImageData(0, 0, pixelW, pixelH).data;
+      const binary = new Uint8Array(pixelW * pixelH);
+
+      for (let y = 0; y < pixelH; y++) {
+        for (let x = 0; x < pixelW; x++) {
+          const i = (y * pixelW + x) * 4;
+          const a = data[i + 3];
+          let lum = a < 10 ? 255 : (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+          let on;
+          if (dither === 'bayer') {
+            const t = threshold + (BAYER_4[y % 4][x % 4] - 7.5) * 4;
+            on = lum < t;
+          } else {
+            on = lum < threshold;
+          }
+          if (invert) on = !on;
+          binary[y * pixelW + x] = on ? 1 : 0;
+        }
+      }
+
+      const lines = [];
+      for (let y = 0; y < pixelH; y += 4) {
+        let line = '';
+        for (let x = 0; x < pixelW; x += 2) {
+          let dots = 0;
+          const get = (py, px) => (py < pixelH && px < pixelW) ? binary[py * pixelW + px] : 0;
+          if (get(y,     x    )) dots |= 0x01;
+          if (get(y + 1, x    )) dots |= 0x02;
+          if (get(y + 2, x    )) dots |= 0x04;
+          if (get(y + 3, x    )) dots |= 0x40;
+          if (get(y,     x + 1)) dots |= 0x08;
+          if (get(y + 1, x + 1)) dots |= 0x10;
+          if (get(y + 2, x + 1)) dots |= 0x20;
+          if (get(y + 3, x + 1)) dots |= 0x80;
+          line += String.fromCodePoint(0x2800 + dots);
+        }
+        lines.push(line);
+      }
+      return lines.join('\n');
+    }
+
+    function generateFromImage() {
+      if (!loadedImage) {
+        output.textContent = '請先上傳圖片';
+        showToast('請先上傳圖片');
+        return;
+      }
+      output.textContent = imageToBraille(loadedImage, {
+        cellsW: parseInt(imgWidth.value, 10),
+        threshold: parseInt(imgThreshold.value, 10),
+        invert: imgInvert.value === '1',
+        dither: imgDither.value
+      });
+    }
+
+    imageFile.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        loadedImage = img;
+        imagePreview.src = url;
+        imagePreviewBox.style.display = 'block';
+        generateFromImage();
+      };
+      img.onerror = () => {
+        loadedImage = null;
+        imagePreviewBox.style.display = 'none';
+        showToast('無法讀取此檔案，請改用 PNG / JPG / WEBP');
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    });
+
+    [imgWidth, imgThreshold, imgInvert, imgDither].forEach(el => {
+      el.addEventListener('change', () => { if (loadedImage) generateFromImage(); });
+      el.addEventListener('input', () => { if (loadedImage) generateFromImage(); });
+    });
+
+    $('generateBtn').addEventListener('click', generate);
+    $('copyBtn').addEventListener('click', copyOutput);
+    $('clearBtn').addEventListener('click', () => {
+      inputText.value = '';
+      output.textContent = '點擊「產生藝術字」或上傳圖片後會顯示在這裡';
+    });
+    $('imgGenerateBtn').addEventListener('click', generateFromImage);
+    $('imgCopyBtn').addEventListener('click', copyOutput);
+    $('imgClearBtn').addEventListener('click', () => {
+      imageFile.value = '';
+      loadedImage = null;
+      imagePreviewBox.style.display = 'none';
+      imagePreview.removeAttribute('src');
+      output.textContent = '點擊「產生藝術字」或上傳圖片後會顯示在這裡';
+    });
+
+    generate();
+  </script>
+</body>
+</html>
