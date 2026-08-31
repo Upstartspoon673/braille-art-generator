@@ -29,7 +29,7 @@
     }
     .container { max-width: 920px; margin: 0 auto; }
     h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
-    .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 28px; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 20px; }
     .card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -60,7 +60,7 @@
     textarea:focus { border-color: var(--accent); }
     .row { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 18px; }
     .field { flex: 1; min-width: 140px; }
-    select, input[type="range"] {
+    select, input[type="range"], input[type="file"] {
       width: 100%;
       background: #121218;
       border: 1px solid var(--border);
@@ -69,6 +69,17 @@
       padding: 10px 12px;
       font-size: 0.95rem;
       outline: none;
+    }
+    input[type="file"] { cursor: pointer; padding: 10px; }
+    input[type="file"]::file-selector-button {
+      background: #2a2a36;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 6px 12px;
+      margin-right: 12px;
+      cursor: pointer;
+      font-family: inherit;
     }
     .range-value {
       display: inline-block;
@@ -94,6 +105,25 @@
       color: var(--text);
       border: 1px solid var(--border);
     }
+    .btn-secondary:hover { background: #343444; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .tab-btn {
+      background: #121218;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    .panel { display: none; }
+    .panel.active { display: block; }
     #output {
       background: #0a0a0e;
       border: 1px solid var(--border);
@@ -109,6 +139,22 @@
       user-select: all;
     }
     .hint { font-size: 0.8rem; color: var(--muted); margin-top: 10px; }
+    .preview-box {
+      margin-top: 14px;
+      max-width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #121218;
+      display: none;
+    }
+    .preview-box img {
+      display: block;
+      max-width: 100%;
+      max-height: 220px;
+      margin: 0 auto;
+      object-fit: contain;
+    }
     .toast {
       position: fixed;
       bottom: 28px;
@@ -131,9 +177,14 @@
 <body>
   <div class="container">
     <h1>盲文點陣藝術產生器</h1>
-    <p class="subtitle">輸入繁體中文或英文，產生類似點字藝術字體（可選直式／橫式、實心／鏤空）</p>
+    <p class="subtitle">文字轉盲文藝術字，或上傳圖片依明暗密度產生點陣圖（可選直式／橫式、實心／鏤空）</p>
 
-    <div class="card">
+    <div class="tabs">
+      <button type="button" class="tab-btn active" data-tab="text">文字轉盲文</button>
+      <button type="button" class="tab-btn" data-tab="image">圖片轉點陣</button>
+    </div>
+
+    <div class="card panel active" id="panel-text">
       <label for="inputText">輸入文字</label>
       <textarea id="inputText" placeholder="例如：你是男娘　或　Hello">你是男娘</textarea>
 
@@ -191,20 +242,67 @@
         <button class="btn-secondary" id="clearBtn">清除</button>
       </div>
     </div>
-    <!-- 生成技巧 -->
+
+    <div class="card panel" id="panel-image">
+      <label for="imageFile">上傳圖片（PNG / JPG / WEBP / GIF 等）</label>
+      <input type="file" id="imageFile" accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.bmp,.psf">
+
+      <div class="preview-box" id="imagePreviewBox">
+        <img id="imagePreview" alt="預覽">
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="imgWidth">輸出寬度（盲文格數） <span class="range-value" id="imgWidthVal">60</span></label>
+          <input type="range" id="imgWidth" min="20" max="160" value="60" step="2">
+        </div>
+        <div class="field">
+          <label for="imgThreshold">明暗閾值 <span class="range-value" id="imgThresholdVal">128</span></label>
+          <input type="range" id="imgThreshold" min="20" max="235" value="128" step="1">
+        </div>
+        <div class="field">
+          <label for="imgInvert">明暗反轉</label>
+          <select id="imgInvert">
+            <option value="0">正常（暗處有點）</option>
+            <option value="1">反轉（亮處有點）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="imgDither">抖動（細節）</label>
+          <select id="imgDither">
+            <option value="none">無（純閾值）</option>
+            <option value="bayer" selected>有序抖動（較平滑）</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" id="imgGenerateBtn">產生點陣圖</button>
+        <button class="btn-secondary" id="imgCopyBtn">複製結果</button>
+        <button class="btn-secondary" id="imgClearBtn">清除</button>
+      </div>
+      <p class="hint" style="margin-top:14px;">依像素明暗決定盲文點的密度：越暗點越多。寬度越大越細緻，但輸出文字也越多。</p>
+    </div>
+
+    <div class="card">
+      <label style="margin:0 0 12px 0">輸出結果（可全選複製）</label>
+      <div id="output">點擊「產生藝術字」或上傳圖片後會顯示在這裡</div>
+      <p class="hint">提示：建議用等寬字體瀏覽。間隔已預設為 0（幾乎無上下空白），外圍空白也已壓到最小。</p>
+    </div>
+
     <div class="card">
       <h2 style="font-size:1.15rem; margin-bottom:14px; font-weight:700;">生成技巧</h2>
-      
+
       <p style="margin-bottom:12px; line-height:1.6;">
-        <strong>長寬比說明：</strong><br>
+        <strong>文字模式｜長寬比說明：</strong><br>
         因為一個盲文格子是 <strong>2 點寬 × 4 點高</strong>，所以要讓字看起來接近<strong>正方形</strong>，請使用：
       </p>
       <p style="background:#121218; padding:12px 16px; border-radius:8px; margin-bottom:16px; font-family:monospace;">
         每字寬度 (cellW) ≈ 每字高度 (cellH) × 2
       </p>
 
-      <p style="margin-bottom:10px;"><strong>建議搭配：</strong></p>
-      <div style="overflow-x:auto;">
+      <p style="margin-bottom:10px;"><strong>文字模式｜建議搭配：</strong></p>
+      <div style="overflow-x:auto; margin-bottom:16px;">
         <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
           <thead>
             <tr style="background:#121218;">
@@ -243,17 +341,20 @@
         </table>
       </div>
 
-      <p style="margin-top:16px; font-size:0.9rem; color:var(--muted); line-height:1.6;">
+      <p style="margin-bottom:10px; line-height:1.6;">
+        <strong>圖片模式：</strong><br>
+        • 上傳 PNG／JPG／WEBP 等常見圖片（若副檔名是 .psf 也會嘗試當圖片讀取）<br>
+        • 寬度以「盲文格數」計算，實際像素寬約為格數 × 2<br>
+        • 明暗閾值：越低越容易出點；反轉可改成亮處有點<br>
+        • 有序抖動可保留更多層次，適合照片
+      </p>
+
+      <p style="margin-top:12px; font-size:0.9rem; color:var(--muted); line-height:1.6;">
         其他小技巧：<br>
         • 字距間隔設 <strong>0</strong> 可讓字幾乎貼在一起<br>
         • 鏤空風格適合深色背景，實心風格適合淺色背景<br>
         • 筆畫粗細調高可讓字更清楚，但細節會變少
       </p>
-    </div>
-    <div class="card">
-      <label style="margin:0 0 12px 0">輸出結果（可全選複製）</label>
-      <div id="output">點擊「產生藝術字」後會顯示在這裡</div>
-      <p class="hint">提示：建議用等寬字體瀏覽。間隔已預設為 0（幾乎無上下空白），外圍空白也已壓到最小。</p>
     </div>
   </div>
 
@@ -273,11 +374,31 @@
     const output = $('output');
     const toast = $('toast');
 
+    const imageFile = $('imageFile');
+    const imagePreview = $('imagePreview');
+    const imagePreviewBox = $('imagePreviewBox');
+    const imgWidth = $('imgWidth');
+    const imgThreshold = $('imgThreshold');
+    const imgInvert = $('imgInvert');
+    const imgDither = $('imgDither');
+    let loadedImage = null;
+
     sizeInput.oninput = () => $('sizeVal').textContent = sizeInput.value;
     thickInput.oninput = () => $('thickVal').textContent = thickInput.value;
     spacingInput.oninput = () => $('spacingVal').textContent = spacingInput.value;
     cellWInput.oninput = () => $('cellWVal').textContent = cellWInput.value;
     cellHInput.oninput = () => $('cellHVal').textContent = cellHInput.value;
+    imgWidth.oninput = () => $('imgWidthVal').textContent = imgWidth.value;
+    imgThreshold.oninput = () => $('imgThresholdVal').textContent = imgThreshold.value;
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        $('panel-' + btn.dataset.tab).classList.add('active');
+      });
+    });
 
     function showToast(msg) {
       toast.textContent = msg;
@@ -285,202 +406,6 @@
       setTimeout(() => toast.classList.remove('show'), 1800);
     }
 
-    // 判斷一行是否「幾乎全空」或「幾乎全滿」
-    function isBlankLine(line, inverted) {
-      if (!line) return true;
-      if (inverted) {
-        // 鏤空：整行幾乎都是 ⣿ 就當空白邊
-        return [...line].every(c => c === '⣿' || c === '⠀');
-      } else {
-        return [...line].every(c => c === '⠀');
-      }
-    }
-
-    function charToBraille(char, opts) {
-      const {
-        fontSize = 160,
-        cellW = 14,
-        cellH = 8,
-        thickness = 2,
-        inverted = true,
-        fontFamily = '"Noto Sans TC", "Microsoft JhengHei", sans-serif'
-      } = opts;
-
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      ctx.font = `bold ${fontSize}px ${fontFamily}`;
-      const metrics = ctx.measureText(char);
-      const textW = metrics.width;
-      const textH = fontSize * 1.1;
-
-      // ★ 外圍空白壓到最小
-      const pad = fontSize * 0.02;
-      const canvasSize = Math.ceil(Math.max(textW, textH) + pad * 2);
-      canvas.width = canvasSize;
-      canvas.height = canvasSize;
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvasSize, canvasSize);
-
-      ctx.fillStyle = '#000000';
-      ctx.font = `bold ${fontSize}px ${fontFamily}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(char, canvasSize / 2, canvasSize / 2);
-
-      if (thickness > 0) {
-        const imgData = ctx.getImageData(0, 0, canvasSize, canvasSize);
-        for (let t = 0; t < thickness; t++) {
-          const copy = new Uint8ClampedArray(imgData.data);
-          const w = canvasSize, h = canvasSize;
-          for (let y = 1; y < h - 1; y++) {
-            for (let x = 1; x < w - 1; x++) {
-              const i = (y * w + x) * 4;
-              let black = false;
-              for (let dy = -1; dy <= 1; dy++) {
-                for (let dx = -1; dx <= 1; dx++) {
-                  const ni = ((y + dy) * w + (x + dx)) * 4;
-                  if (copy[ni] < 128) { black = true; break; }
-                }
-                if (black) break;
-              }
-              if (black) {
-                imgData.data[i] = imgData.data[i+1] = imgData.data[i+2] = 0;
-              }
-            }
-          }
-        }
-        ctx.putImageData(imgData, 0, 0);
-      }
-
-      const pixelW = cellW * 2;
-      const pixelH = cellH * 4;
-      const small = document.createElement('canvas');
-      small.width = pixelW;
-      small.height = pixelH;
-      const sctx = small.getContext('2d');
-      sctx.imageSmoothingEnabled = true;
-      sctx.drawImage(canvas, 0, 0, pixelW, pixelH);
-
-      const data = sctx.getImageData(0, 0, pixelW, pixelH).data;
-      const binary = new Uint8Array(pixelW * pixelH);
-      for (let i = 0; i < pixelW * pixelH; i++) {
-        const lum = data[i * 4];
-        binary[i] = inverted ? (lum >= 140 ? 1 : 0) : (lum < 140 ? 1 : 0);
-      }
-
-      const lines = [];
-      for (let y = 0; y < pixelH; y += 4) {
-        let line = '';
-        for (let x = 0; x < pixelW; x += 2) {
-          let dots = 0;
-          const get = (py, px) => (py < pixelH && px < pixelW) ? binary[py * pixelW + px] : 0;
-          if (get(y,     x    )) dots |= 0x01;
-          if (get(y + 1, x    )) dots |= 0x02;
-          if (get(y + 2, x    )) dots |= 0x04;
-          if (get(y + 3, x    )) dots |= 0x40;
-          if (get(y,     x + 1)) dots |= 0x08;
-          if (get(y + 1, x + 1)) dots |= 0x10;
-          if (get(y + 2, x + 1)) dots |= 0x20;
-          if (get(y + 3, x + 1)) dots |= 0x80;
-          line += String.fromCodePoint(0x2800 + dots);
-        }
-        lines.push(line);
-      }
-
-      // ★ 去掉上下多餘的空白行（消掉外圍空白）
-      while (lines.length && isBlankLine(lines[0], inverted)) lines.shift();
-      while (lines.length && isBlankLine(lines[lines.length - 1], inverted)) lines.pop();
-
-      return lines;
-    }
-
-    function generate() {
-      const text = inputText.value.trim();
-      if (!text) {
-        output.textContent = '請先輸入文字';
-        return;
-      }
-
-      const chars = [...text].filter(c => c.trim() !== '');
-      if (chars.length === 0) {
-        output.textContent = '請輸入有效文字';
-        return;
-      }
-
-      const opts = {
-        fontSize: parseInt(sizeInput.value, 10),
-        cellW: parseInt(cellWInput.value, 10),
-        cellH: parseInt(cellHInput.value, 10),
-        thickness: parseInt(thickInput.value, 10),
-        inverted: styleSel.value === 'inverted',
-        fontFamily: fontFamilySel.value
-      };
-
-      // 預設間隔 0（幾乎無上下空白）
-      const spacing = parseInt(spacingInput.value, 10);
-      const dir = direction.value;
-      let result = [];
-
-      if (dir === 'vertical') {
-        const fillChar = opts.inverted ? '⣿' : '⠀';
-        const sepLine = fillChar.repeat(opts.cellW);
-
-        chars.forEach((ch, idx) => {
-          const lines = charToBraille(ch, opts);
-          result.push(...lines);
-          // 只有 spacing > 0 才加間隔，且只加指定行數
-          if (idx < chars.length - 1 && spacing > 0) {
-            for (let s = 0; s < spacing; s++) {
-              result.push(sepLine);
-            }
-          }
-        });
-      } else {
-        const allCharLines = chars.map(ch => charToBraille(ch, opts));
-        const maxLines = Math.max(...allCharLines.map(l => l.length));
-        const gapUnit = opts.inverted ? '⣿' : '⠀';
-        const gap = gapUnit.repeat(Math.max(0, spacing));
-
-        for (let row = 0; row < maxLines; row++) {
-          let line = '';
-          allCharLines.forEach((charLines, idx) => {
-            const segment = charLines[row] || (opts.inverted ? '⣿'.repeat(opts.cellW) : '⠀'.repeat(opts.cellW));
-            line += segment;
-            if (idx < allCharLines.length - 1 && spacing > 0) line += gap;
-          });
-          result.push(line);
-        }
-      }
-
-      output.textContent = result.join('\n');
-    }
-
-    $('generateBtn').addEventListener('click', generate);
-    $('copyBtn').addEventListener('click', () => {
+    function copyOutput() {
       const text = output.textContent;
-      if (!text || text.startsWith('點擊') || text.startsWith('請')) {
-        showToast('沒有可複製的內容');
-        return;
-      }
-      navigator.clipboard.writeText(text).then(() => showToast('已複製到剪貼簿'))
-        .catch(() => {
-          const ta = document.createElement('textarea');
-          ta.value = text;
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          document.body.removeChild(ta);
-          showToast('已複製到剪貼簿');
-        });
-    });
-    $('clearBtn').addEventListener('click', () => {
-      inputText.value = '';
-      output.textContent = '點擊「產生藝術字」後會顯示在這裡';
-    });
-
-    generate();
-  </script>
-</body>
-</html>
+      
